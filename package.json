@@ -16,12 +16,12 @@
           "users": {
             "alice": {
               "roles": [
-                "support"
+                "admin"
               ]
             },
             "bob": {
               "roles": [
-                "admin"
+                "support"
               ]
             }
           }
