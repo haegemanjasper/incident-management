@@ -5,10 +5,7 @@ export class ProcessorService extends cds.ApplicationService {
   init() {
     this.before("UPDATE", "Incidents", (req) => this.onUpdate(req));
     this.before(["CREATE", "UPDATE"], "Incidents", (req) => this.changeUrgencyDueToSubject(req.data));
-    this.before('*', req => {
-      console.log('USER:', req.user.id, 'ROLES:', Object.keys( req.user.roles ?? {} ))
-      console.log('TOKEN:', req.headers.authorization)
-    })    
+
     return super.init();
   }
 
@@ -18,8 +15,18 @@ export class ProcessorService extends cds.ApplicationService {
   }
 
   /** Custom Validation */
-  async onUpdate (req) {
-    let closed = await SELECT.one(1) .from (req.subject) .where `status.code = 'C'`
-    if (closed) req.reject `Can't modify a closed incident!`
+  async onUpdate(req) {
+    let closed = await SELECT.one(1).from(req.subject).where`status.code = 'C'`
+    if (closed) req.reject`Can't modify a closed incident!`
+  }
+}
+
+export class AdminService extends cds.ApplicationService {
+  init() {
+    this.before('*', req => {
+      console.log('USER:', req.user.id, 'ROLES:', Object.keys(req.user.roles ?? {}))
+      console.log('TOKEN:', req.headers.authorization)
+    })
+    return super.init();
   }
 }
