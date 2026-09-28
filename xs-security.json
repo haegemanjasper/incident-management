@@ -27,5 +27,17 @@
       ],
       "attribute-references": []
     }
+  ],
+  "role-collections": [
+    {
+      "name": "Incident Management Support",
+      "description": "Can view and process incidents",
+      "role-template-references": ["$XSAPPNAME.support"]
+    },
+    {
+      "name": "Incident Management Admin",
+      "description": "Full access to incidents",
+      "role-template-references": ["$XSAPPNAME.admin"]
+    }
   ]
 }
