@@ -4,6 +4,7 @@
   "description": "Welcome to your new CAP project.",
   "main": "index.js",
   "scripts": {
+    "start": "cds-serve",
     "test": "CDS_PLUGIN_UI5_ACTIVE=false node --test --test-timeout=30000 test/test.js",
     "watch-incidents": "cds watch --open ns.incidents/index.html?sap-ui-xx-viewCache=false --livereload false"
   },
@@ -55,5 +56,8 @@
   ],
   "sapux": [
     "app/incidents"
-  ]
+  ],
+  "directories": {
+    "test": "test"
+  }
 }
