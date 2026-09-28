@@ -169,3 +169,17 @@ annotate service.Incidents.conversation with @(
     ]
 );
 
+/*
+
+# IETS VERBERGEN IN DE UI IS GEEN SECURITY
+
+annotate service.Incidents with @UI.DeleteHidden : true;
+
+*/ 
+
+annotate ProcessorService.Incidents with @(restrict: [
+    { grant: ['READ', 'CREATE', 'UPDATE'], to: 'support' },
+    { grant: '*', to: 'admin' }
+]);
+
+

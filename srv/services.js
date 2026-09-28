@@ -5,7 +5,10 @@ export class ProcessorService extends cds.ApplicationService {
   init() {
     this.before("UPDATE", "Incidents", (req) => this.onUpdate(req));
     this.before(["CREATE", "UPDATE"], "Incidents", (req) => this.changeUrgencyDueToSubject(req.data));
-
+    this.before('*', req => {
+      console.log('USER:', req.user.id, 'ROLES:', Object.keys( req.user.roles ?? {} ))
+      console.log('TOKEN:', req.headers.authorization)
+    })    
     return super.init();
   }
 
