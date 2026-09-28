@@ -1,4 +1,5 @@
 import cds from '@sap/cds'
+import assert from 'node:assert'
 
 const test = cds.test(import.meta.dirname + '/..')
 const { GET, POST, DELETE, PATCH, expect } = test
@@ -125,66 +126,67 @@ describe('Draft Choreography APIs', () => {
     expect(status).to.eql(204)
   })
 
-  it('- Delete the Incident', async () => {
-    const { status } = await DELETE(
-      `/odata/v4/processor/Incidents(ID=${incidentId},IsActiveEntity=true)`
+  it('- Delete the Incident as support -> 403', async () => {
+    await assert.rejects(
+      DELETE(`/odata/v4/processor/Incidents(ID=${incidentId},IsActiveEntity=true)`,
+        { auth: { username: 'alice', password: '' } }),
+      err => err.status === 403
     )
-    expect(status).to.eql(204)
-  })
-})
-
-describe('Auto-Urgency logic (processor-service.js custom handler)', () => {
-  const activate = async (body) => {
-    const { data: draft } = await POST(`/odata/v4/processor/Incidents`, body)
-    const { data: active } = await POST(
-      `/odata/v4/processor/Incidents(ID=${draft.ID},IsActiveEntity=false)/ProcessorService.draftActivate`
-    )
-    return active
-  }
-  const cleanup = async (id) => {
-    await DELETE(`/odata/v4/processor/Incidents(ID=${id},IsActiveEntity=true)`, { validateStatus: null })
-  }
-
-  it('does NOT change urgency_code when title has no "urgent"', async () => {
-    const active = await activate({ title: 'Routine maintenance', urgency_code: 'L', status_code: 'N' })
-    expect(active.urgency_code).to.equal('L')
-    await cleanup(active.ID)
   })
 
-  it('sets urgency_code=H for all-caps URGENT (case-insensitive /urgent/i)', async () => {
-    const active = await activate({ title: 'URGENT: system failure', urgency_code: 'L', status_code: 'N' })
-    expect(active.urgency_code).to.equal('H')
-    await cleanup(active.ID)
+  describe('Auto-Urgency logic (processor-service.js custom handler)', () => {
+    const activate = async (body) => {
+      const { data: draft } = await POST(`/odata/v4/processor/Incidents`, body)
+      const { data: active } = await POST(
+        `/odata/v4/processor/Incidents(ID=${draft.ID},IsActiveEntity=false)/ProcessorService.draftActivate`
+      )
+      return active
+    }
+    const cleanup = async (id) => {
+      await DELETE(`/odata/v4/processor/Incidents(ID=${id},IsActiveEntity=true)`, { validateStatus: null })
+    }
+
+    it('does NOT change urgency_code when title has no "urgent"', async () => {
+      const active = await activate({ title: 'Routine maintenance', urgency_code: 'L', status_code: 'N' })
+      expect(active.urgency_code).to.equal('L')
+      await cleanup(active.ID)
+    })
+
+    it('sets urgency_code=H for all-caps URGENT (case-insensitive /urgent/i)', async () => {
+      const active = await activate({ title: 'URGENT: system failure', urgency_code: 'L', status_code: 'N' })
+      expect(active.urgency_code).to.equal('H')
+      await cleanup(active.ID)
+    })
+
+    it('sets urgency_code=H when "urgent" appears mid-title', async () => {
+      const active = await activate({ title: 'Please treat this as urgent matter', urgency_code: 'M', status_code: 'N' })
+      expect(active.urgency_code).to.equal('H')
+      await cleanup(active.ID)
+    })
   })
 
-  it('sets urgency_code=H when "urgent" appears mid-title', async () => {
-    const active = await activate({ title: 'Please treat this as urgent matter', urgency_code: 'M', status_code: 'N' })
-    expect(active.urgency_code).to.equal('H')
-    await cleanup(active.ID)
-  })
-})
+  describe('Authorization', () => {
+    it('rejects support-role user (alice) from AdminService with 403', async () => {
+      const { status } = await GET(`/odata/v4/admin/Customers`, { validateStatus: null })
+      expect(status).to.equal(403)
+    })
 
-describe('Authorization', () => {
-  it('rejects support-role user (alice) from AdminService with 403', async () => {
-    const { status } = await GET(`/odata/v4/admin/Customers`, { validateStatus: null })
-    expect(status).to.equal(403)
-  })
+    it('allows bob (admin role) to read and write Customers', async () => {
+      const bob = { auth: { username: 'bob', password: '' } }
 
-  it('allows bob (admin role) to read and write Customers', async () => {
-    const bob = { auth: { username: 'bob', password: '' } }
+      const { status: gs, data } = await GET(`/odata/v4/admin/Customers`, bob)
+      expect(gs).to.equal(200)
+      expect(data.value).to.be.an('array')
 
-    const { status: gs, data } = await GET(`/odata/v4/admin/Customers`, bob)
-    expect(gs).to.equal(200)
-    expect(data.value).to.be.an('array')
+      const { status: cs } = await POST(
+        `/odata/v4/admin/Customers`,
+        { ID: 'AUTH01', firstName: 'Test', lastName: 'Admin' },
+        bob
+      )
+      expect(cs).to.equal(201)
 
-    const { status: cs } = await POST(
-      `/odata/v4/admin/Customers`,
-      { ID: 'AUTH01', firstName: 'Test', lastName: 'Admin' },
-      bob
-    )
-    expect(cs).to.equal(201)
-
-    const { status: ds } = await DELETE(`/odata/v4/admin/Customers('AUTH01')`, { ...bob, validateStatus: null })
-    expect(ds).to.equal(204)
+      const { status: ds } = await DELETE(`/odata/v4/admin/Customers('AUTH01')`, { ...bob, validateStatus: null })
+      expect(ds).to.equal(204)
+    })
   })
 })
