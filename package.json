@@ -32,7 +32,17 @@
       },
       "destinations": true,
       "html5-repo": true,
-      "workzone": true
+      "workzone": true,
+      "API_BUSINESS_PARTNER": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_BUSINESS_PARTNER",
+        "[production]": {
+          "credentials": {
+            "destination": "s4hana-cloud-mock",
+            "path": "/odata/v2/api-business-partner"
+          }
+        }
+      }
     }
   },
   "keywords": [],
@@ -41,9 +51,13 @@
   "type": "module",
   "dependencies": {
     "@cap-js/hana": "^3",
+    "@sap-cloud-sdk/connectivity": "^4.9.1",
+    "@sap-cloud-sdk/http-client": "^4.9.1",
+    "@sap-cloud-sdk/resilience": "^4.9.1",
+    "@sap-cloud-sdk/util": "^4.9.1",
     "@sap/cds": "^10",
-    "express": "^5.2.1",
-    "@sap/xssec": "^4"
+    "@sap/xssec": "^4",
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1",
